@@ -1,0 +1,30 @@
+---
+# tasks file for nginx_custom
+
+- name: Установка Nginx
+  apt:
+    name: "nginx"
+    state: present
+
+- name: Подмена веб-страницы
+  ansible.builtin.template:
+    src: index.j2
+    dest: /var/www/html/index.nginx-debian.html
+  when: "'vm_' in inventory_hostname" # Выполнится только тогда, когда в имени есть vm_1
+  notify: "Nginx Reloader"
+
+- name: Внесение серверов в файл настройки Nginx
+  blockinfile: 
+    dest: /etc/nginx/sites-available/default
+    block: 
+       upstream backend {
+    server 84.201.129.148:8000;
+    server 84.201.134.253:8000;
+    server 89.169.137.237:8000;
+   }
+
+- name: Настройка прокси
+  lineinfile:
+    dest: /etc/nginx/sites-available/default
+    insertafter: '^location / {' 
+    line: 'proxy_pass http://backend;'
